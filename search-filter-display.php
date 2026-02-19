@@ -225,9 +225,15 @@ function pq_execute($data) {
   $pod_obj = pods($pod_name);
   $params = array('limit' => $per_page, 'pagination' => $pagin, 'page' => $current_page, 'orderby' => $orderby);
   $pod_obj->find($params);
+  $proc = [];
   $results = [];
-  $test = $pod_obj->pagination( array( 'type' => 'advanced' ) );
+  /* $test = $pod_obj->pagination( array( 'type' => 'advanced' ) ); */
   $total_records = $pod_obj->total_found();
+  
+  $context = [
+    "total_found" => $total_records,
+    "original_query" => $_SESSION['orig_query'],
+  ]; 
 
   while ($pod_obj->fetch()){
     $item_category = $pod_obj->field('inventory_item_main_type.name');
@@ -246,14 +252,13 @@ function pq_execute($data) {
     $link = $pod_obj->field('permalink');
     $item = [
       "id" => $id,
-      "test" => $test,
-      "q" => $_SESSION['query_temp'],
-      "total_found" => $total_records,
+      "all" => $pod_obj->fields(),
       "url" => esc_url($link), 
       "size" => $pod_obj->display('inventory_item_size'),
       "color" => $pod_obj->display('inventory_color'),
       "donated_by" => $donated_by,
       "year" => $pod_obj->display('inventory_year'),
+      "alt_name" => $pod_obj->fields('inventory_year'),
       "title" => $pod_obj->field('inventory_title'),
       "subtitle" => $subtitle,
       "category" => $item_category,
@@ -264,8 +269,13 @@ function pq_execute($data) {
       "image_one" => $pod_obj->display('inventory_image-one.guid'),
       "image_two" => $pod_obj->display('inventory_image-two.guid')
     ];
-    array_push($results, $item);
+    array_push($proc, $item);
   }
+
+  $results = [
+    "results" => $proc,
+    "context" => $context
+  ];
   return $results;
 }
 
@@ -284,7 +294,7 @@ function fetch_search_results() {
 
   check_ajax_referer('search_nonce', 'nonce'); 
   $data = $_POST['query'];
-  $_SESSION['query_temp'] = $data;
+  $_SESSION['orig_query'] = $data;
   if (empty($data)) {
       wp_send_json_error('No data received');
       wp_die();
@@ -381,9 +391,9 @@ function search_filter_settings() {
 
 function search_filter_config_page() { ?>  
   <div class="wrap">
-    <h2>Search & Filter Display Configuration</h2>
-
-    <form method="post" action="options.php">
+    <h2>Search, Filter and Display Configuration</h2>
+    <h3>This is non-functional currently. Check with author for development timeline.</h3>
+    <form method="post" action="options.php" style="display: none;">
       <?php settings_fields( 'search-filter-settings-group' ); ?>
       <?php do_settings_sections( 'search-filter-settings-group' ); ?>
       <table class="form-table">

@@ -1,19 +1,15 @@
-class DisplayButtonHandler {
-  constructor(element_name, mode, sto) { 
-    this.mode = mode;
-    this.element_name = element_name;
-    this.sto = sto;
-    this.element = document.getElementById(element_name);
-    this.element.addEventListener('click', this.handler);
-  }
-  handler = () => {
-    this.sto.mode = this.mode;
-    console.log(this.sto);
-  }
-}
 
-
-
+// Description:  Supporting js library for search and interactive display
+// Version:      0.1a
+// Last Change:  19 February 2026
+// Author:       Ken Stewart <kengfx@gmail.com>
+//
+// This code is a supporting library only implementing functions to   
+// call wordpress specific php and pod searches using ajax requests.         
+// This was created expressly for the ACM SIGGRAPH History Archive at BGSU, 
+// all software is provided as-is and is not licensed for commercial use 
+// by anyone outside of the ACM unless explicitly authorized by the author
+// or the presiding ACM Siggraph History Archive team.
 
 
 jQuery(document).ready(function($) {
@@ -38,14 +34,28 @@ jQuery(document).ready(function($) {
         </tr>
       </thead>
       `);
+    
+    const res_obj = getResults();
     let return_list = [];
-    $.each(data.data, function(index, item) {
+    $.each(res_obj, function(index, item) {
       let volnum = "";
       if (item.volume.length>0) {
         if (item.number.length>0){
           volnum = `(Vol. ${item.volume}, No. ${item.number})`;
         }
       }
+
+      let quantity = Number(item.quantity) ?? 0;
+      let quant_display = "";
+      if (quantity<3){
+        quant_display = `<span class="simpui-badge danger sm">${item.quantity}</span>`;
+      } else if (quantity>15) { 
+        quant_display = `<span class="simpui-badge success sm">${item.quantity}</span>`;
+      } else {
+        quant_display = `<span class="simpui-badge subtle sm">${item.quantity}</span>`;
+      }
+
+
       return_list.push(
         `<tr data-id="${item.id}">
           <td style="text-align: center;">${item.year}</td>
@@ -53,13 +63,12 @@ jQuery(document).ready(function($) {
           <td style="text-align: center;">${item.category}</td>
           <td style="text-align: center;"></td>
           <td>${item.type}</td>
-          <td style="text-align: center;">${item.quantity}</td>
+          <td style="text-align: center;">${quant_display}</td>
         </tr>`);
     });
     $('#custom_search_results').html(return_list);
     $("#spinner").hide();
   }
-
 
 
 
@@ -74,8 +83,9 @@ jQuery(document).ready(function($) {
     $('#main_table').hide();
     $('#grid_content').show()
 
+    const res_obj = getResults();
     let return_list = [];
-    $.each(data.data, function(index, item) {
+    $.each(res_obj, function(index, item) {
       let title = item.title;
       
       const siggraph = new RegExp("^SIGGRAPH\\s\\d{4}\\s", "g");
@@ -88,33 +98,43 @@ jQuery(document).ready(function($) {
         conflabel = `<span class="simpui-badge subtle sm" style="border: 1px solid #595959; position: absolute; top: 143px; left: -4px; z-index: 500;">${prefix}</span>`;
       }
       
+      let image_style = "object-fit: contain; object-position: 50% 0%;";
+
       let volnum = "";
       if (item.volume.length>0) {
         if (item.number.length>0){
           volnum = `Vol. ${item.volume}, No. ${item.number}`;
         }
       }
+      
+      let quantity = Number(item.quantity) ?? 0;
+      let quant_display = "";
+      if (quantity<3){
+        quant_display = `<span class="simpui-badge danger sm">${item.quantity}</span>`;
+      } else if (quantity>15) { 
+        quant_display = `<span class="simpui-badge success sm">${item.quantity}</span>`;
+      } else {
+        quant_display = `<span class="simpui-badge subtle sm">${item.quantity}</span>`;
+      }
+
           // ${conflabel}
       return_list.push(
-        `<div class="short summary-card-wrapper" style="height: 290px; overflow: visible; position: relative;">
+        `<div class="short summary-card-wrapper" style="height: 265px; overflow: visible; position: relative;">
           <div class="summary-card" style="overflow: hidden;">
             <div class="thumbnail" style="position: relative;">
               <a href="${item.url}" class="hasimg" title="">
-                <img decoding="async" loading="lazy" width="150" height="150" src="${item.image_one}" class="attachment-thumbnail size-thumbnail" alt="${item.title}">
+                <img decoding="async" loading="lazy" width="150" height="150" src="${item.image_one}" class="attachment-thumbnail size-thumbnail" alt="${item.title}" style="${image_style}">
               </a>
             </div>
             
-            <div class="title" style="height:160px;">
+            <div class="title" style="height: 55px; overflow: hidden;">
               <a href="${item.url}">${item.title} ${volnum}</a>
             </div>
             <div class="conference details">
-              <a href="">${item.category}</a>
+              <a href="">${item.category}</a> | ${item.type}
             </div>
-            <div class="conference details">
-              ${item.type}
-            </div>
-            <div class="categories details">
-              Quantity: ${item.quantity}
+            <div class="categories details" style="display: flex; flex-direction: row; justify-content: flex-end; position: absolute; bottom: 4px; right: 4px; z-index: 500">
+              <div style="width: fit-content;">Quantity: ${quant_display}</div>
             </div>
           </div>
         </div>`);
@@ -165,26 +185,29 @@ jQuery(document).ready(function($) {
       success: function(data) {
 
         // HINT: Updating the global results object for tracking
-        $('#results_object').text(JSON.stringify(data));
+        $('#results_object').text(JSON.stringify(data.data.results));
         
         // HINT: Add in missing bits
-        const total_found = getStateItem('total_found');
+        const total_found = getStateItem('total_found') ?? 0;
         const current_page = getStateItem('page');
         const per_page = getStateItem('perpage');
         let count = 0;
         if (total_found > 0){
           count = total_found/Number(per_page);
         }
+        
+        // $('#state_object').text(JSON.stringify(ajax_obj.query_state));
+        
         count = ~~count;
         const display_page_count = `${current_page} / ${count}`;
         $('#page_counter').text(display_page_count);
         
         console.log(data.data);
         if (getStateItem('mode') == 'list') {
-          rebuildTable(data);
+          rebuildTable(data.data.results);
         }
         if (getStateItem('mode') == 'grid') {
-          rebuildGrid(data);
+          rebuildGrid(data.data.results);
         }
       },
     })
@@ -205,12 +228,13 @@ jQuery(document).ready(function($) {
         $("#spinner").show();
       },
       success: function(data) {
-
+        // console.log(data);
         // HINT: Updating the global results object for tracking
-        $('#results_object').text(JSON.stringify(data));
+        $('#results_object').text(JSON.stringify(data.data.results));
         
         // HINT: Add in missing bits
-        const total_found = Number(data.data[0]['total_found']);
+        const total_found = Number(data.data.context.total_found) ?? 0;
+        // console.log(total_found);
         ajax_obj.query_state.total_found = total_found;
         
         const current_page = ajax_obj.query_state['page'];
@@ -218,7 +242,7 @@ jQuery(document).ready(function($) {
         let count = 0;
         if (total_found > 0){
           count = total_found/Number(per_page);
-          console.log(count);
+          // console.log(count);
         }
         // count = Math.round(count);
         ajax_obj.query_state.lastpage = count;
@@ -227,14 +251,13 @@ jQuery(document).ready(function($) {
 
         const display_page_count = `${current_page} / ${count}`;
         $('#page_counter').text(display_page_count);
-
         
-        console.log(data.data);
+        // console.log(data.data);
         if (ajax_obj.query_state.mode == 'list') {
-          rebuildTable(data);
+          rebuildTable(data.data.results);
         }
         if (ajax_obj.query_state.mode == 'grid') {
-          rebuildGrid(data);
+          rebuildGrid(data.data.results);
         }
       },
     })
@@ -275,6 +298,11 @@ jQuery(document).ready(function($) {
     }
   }
 
+  function getResults() {
+    const res = JSON.parse($("#results_object").text());
+    return res;
+  }
+
 
   //  NOTE:  Bindings to buttons and changes
 
@@ -303,9 +331,6 @@ jQuery(document).ready(function($) {
       console.log(st);
     }
   });
-  // session = getState();
-  // let list = new DisplayButtonHandler( "list-button", "list", session );
-  // let grid = new DisplayButtonHandler( "grid-button", "grid", session );
 
   // NOTE: Dropdown binding
 
@@ -351,7 +376,7 @@ jQuery(document).ready(function($) {
 
   // Monitor changes in state object
   $('#state_object').bind('change', function() {
-    console.log('standin for update function.', getState());
+    console.log('state change:', getState());
     changePageResults();
   });
 
