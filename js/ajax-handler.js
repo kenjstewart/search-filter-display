@@ -6,7 +6,6 @@ class DisplayButtonHandler {
     this.element = document.getElementById(element_name);
     this.element.addEventListener('click', this.handler);
   }
-  // FUNC: Handler function
   handler = () => {
     this.sto.mode = this.mode;
     console.log(this.sto);
@@ -16,10 +15,8 @@ class DisplayButtonHandler {
 
 
 
-// FUNC: Triggers on initial page load
 
 jQuery(document).ready(function($) {
-
   console.log('ajax search triggered');
 
   // HINT: Function to call to change format of display, or reduce query amt.
@@ -27,6 +24,13 @@ jQuery(document).ready(function($) {
   //       triggered after the ajax call for additional information.
 
   function rebuildTable(data) {
+    $('#grid_content').hide()
+    $('#grid_content').html("")
+    // ------------------------
+    $('#table-header').show();
+    $('#custom_search_results').show();
+    $('#main_table').show();
+
     $('#table-header').replaceWith(`
       <thead>
         <tr>
@@ -34,10 +38,6 @@ jQuery(document).ready(function($) {
         </tr>
       </thead>
       `);
-
-
-    // $('#pagination_temp').html(data.data[0]['test']);
-
     let return_list = [];
     $.each(data.data, function(index, item) {
       let volnum = "";
@@ -47,7 +47,7 @@ jQuery(document).ready(function($) {
         }
       }
       return_list.push(
-        `<tr>
+        `<tr data-id="${item.id}">
           <td style="text-align: center;">${item.year}</td>
           <td style="text-align: left;"><b><a href="${item.url}">${item.title} ${volnum}</a><b></td>
           <td style="text-align: center;">${item.category}</td>
@@ -57,17 +57,78 @@ jQuery(document).ready(function($) {
         </tr>`);
     });
     $('#custom_search_results').html(return_list);
+    $("#spinner").hide();
   }
-  
+
+
+
+
+  // NOTE: Grid
+
   function rebuildGrid(data) {
     console.log('rebuild grid called');
+    $('#table-header').hide();
+    $('#custom_search_results').hide();
+    $('#custom_search_results').html("");
+    // ------------------------
+    $('#main_table').hide();
+    $('#grid_content').show()
+
+    let return_list = [];
+    $.each(data.data, function(index, item) {
+      let title = item.title;
+      
+      const siggraph = new RegExp("^SIGGRAPH\\s\\d{4}\\s", "g");
+      const res = siggraph.exec(title);
+      let conflabel = "";
+      let cut_title = new String();
+      if (res) {
+        let cut_title = title.slice(res['0'].length, title.length);
+        let prefix = title.slice(0, res['0'].length);
+        conflabel = `<span class="simpui-badge subtle sm" style="border: 1px solid #595959; position: absolute; top: 143px; left: -4px; z-index: 500;">${prefix}</span>`;
+      }
+      
+      let volnum = "";
+      if (item.volume.length>0) {
+        if (item.number.length>0){
+          volnum = `Vol. ${item.volume}, No. ${item.number}`;
+        }
+      }
+          // ${conflabel}
+      return_list.push(
+        `<div class="short summary-card-wrapper" style="height: 290px; overflow: visible; position: relative;">
+          <div class="summary-card" style="overflow: hidden;">
+            <div class="thumbnail" style="position: relative;">
+              <a href="${item.url}" class="hasimg" title="">
+                <img decoding="async" loading="lazy" width="150" height="150" src="${item.image_one}" class="attachment-thumbnail size-thumbnail" alt="${item.title}">
+              </a>
+            </div>
+            
+            <div class="title" style="height:160px;">
+              <a href="${item.url}">${item.title} ${volnum}</a>
+            </div>
+            <div class="conference details">
+              <a href="">${item.category}</a>
+            </div>
+            <div class="conference details">
+              ${item.type}
+            </div>
+            <div class="categories details">
+              Quantity: ${item.quantity}
+            </div>
+          </div>
+        </div>`);
+    });
+    $('#grid_content').html(return_list);
+    $("#spinner").hide();
   }
+
+
 
   function changePage(pnum){
     console.log(`current_page:....`);
     console.log(`change page number to ${pnum}`);
   }
-
   function updateResultsDisplay() {
     console.log();
     // 1. check if list or grid
@@ -76,6 +137,12 @@ jQuery(document).ready(function($) {
     // 4. if changing to grid mode, images should be lazy loaded
   // 5. and a placeholder is substituted to show loading.
   }
+
+
+
+
+
+
   // HINT: Function to change pages
 
   function changePageResults() {
@@ -91,8 +158,9 @@ jQuery(document).ready(function($) {
         nonce: ajax_obj.nonce,
         query: embedded_page_state_object,
       },
-      beforeSend: function(data) {
-        console.log(ajax_obj);
+      beforeSend: function() {
+        $("#spinner").show();
+        // console.log(ajax_obj);
       },
       success: function(data) {
 
@@ -106,17 +174,16 @@ jQuery(document).ready(function($) {
         let count = 0;
         if (total_found > 0){
           count = total_found/Number(per_page);
-          console.log(count);
         }
-
-        const display_page_count = `${current_page}/${count}`;
+        count = ~~count;
+        const display_page_count = `${current_page} / ${count}`;
         $('#page_counter').text(display_page_count);
         
         console.log(data.data);
-        if (ajax_obj.query_state.mode == 'list') {
+        if (getStateItem('mode') == 'list') {
           rebuildTable(data);
         }
-        if (ajax_obj.query_state.mode == 'grid') {
+        if (getStateItem('mode') == 'grid') {
           rebuildGrid(data);
         }
       },
@@ -134,8 +201,8 @@ jQuery(document).ready(function($) {
         nonce: ajax_obj.nonce,
         query: ajax_obj.query_state,
       },
-      beforeSend: function(data) {
-        // console.log(ajax_obj);
+      beforeSend: function() {
+        $("#spinner").show();
       },
       success: function(data) {
 
@@ -153,13 +220,14 @@ jQuery(document).ready(function($) {
           count = total_found/Number(per_page);
           console.log(count);
         }
-
+        // count = Math.round(count);
         ajax_obj.query_state.lastpage = count;
         ajax_obj.query_state.firstpage = 1;
         $('#state_object').text(JSON.stringify(ajax_obj.query_state));
 
-        const display_page_count = `${current_page}/${count}`;
+        const display_page_count = `${current_page} / ${count}`;
         $('#page_counter').text(display_page_count);
+
         
         console.log(data.data);
         if (ajax_obj.query_state.mode == 'list') {
@@ -189,18 +257,22 @@ jQuery(document).ready(function($) {
     return st[key];
   }
 
-  function setState(data) {
+  function setState(data, trigger = true) {
     let st_obj = $("#state_object");
     st_obj.text(JSON.stringify(data));
-    st_obj.trigger('change');
+    if (trigger == true) {
+      st_obj.trigger('change');
+    }
   }
 
-  function setStateItem(key, value) {
+  function setStateItem(key, value, trigger = true) {
     let st = getState();
     st[key] = value;
     let st_obj = $("#state_object");
     st_obj.text(JSON.stringify(st));
-    st_obj.trigger('change');
+    if (trigger == true) {
+      st_obj.trigger('change');
+    }
   }
 
 
@@ -215,19 +287,20 @@ jQuery(document).ready(function($) {
   //  "orderby": "inventory_year DESC"
 
   // NOTE:  Button bindings
-
   
-  $('#list_button').bind('click', function() {
+  $('#list-button').bind('click', function() {
     st = getState();
+    console.log(st);
     if (st.mode != 'list') {
       setStateItem('mode', 'list');
     }
   });
   
-  $('#grid_button').bind('click', function() {
+  $('#grid-button').bind('click', function() {
     st = getState();
     if (st.mode != 'grid') {
       setStateItem('mode', 'grid');
+      console.log(st);
     }
   });
   // session = getState();

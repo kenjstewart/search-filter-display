@@ -114,7 +114,7 @@ function search_filter_gui ($atts) {
   // ---------------------------------------------------------------- top row grid and list buttons ----
   $list_button = make_button("icons/layout-list.svg", "list-button");
   $grid_button = make_button("icons/layout-grid.svg", "grid-button");
-
+  $spinner = '<div class="loader"></div>';
   // [17-02-2026] ------------------------------------------------------- bottom pagination buttons ----
   $bottom_bar_style = array("padding" => "0.11rem", "margin" => "5px 2px");
   $goto_firstpage_button = make_button("icons/push-chevron-left.svg", "goto_firstpage_button", $bottom_bar_style );
@@ -146,19 +146,19 @@ function search_filter_gui ($atts) {
   $tempB = preg_replace("/\[search\]/", "$search_bar", $tempA);
   $tempC = preg_replace("/\[result_per_page\]/", "$rpp", $tempB);
   $topbar_gui_compiled = preg_replace("/\[display_buttons\]/", "$list_button$grid_button", $tempC);
-  $bottombar_gui_compiled = 
   // -------------------------------------------------------------------- loading the table element ----
   $table_url = THIS_PLUGIN_PATH . "components/table.html";
   $card_url = THIS_PLUGIN_PATH . "components/card.html";
   $table = file_get_contents("$table_url");
   $section_cap = "</section>";
+  $grid_content = "<div id='grid_content' style='margin: 10px 0px'></div>";
   // ----------------------------------------------------------------- inject the js and return gui ----
   $js_inline_template = '<script lang="javascript" src="[state]"></script>';
   $js_state_url = plugins_url( 'js/state.js', __FILE__);
   $js_state_inject = preg_replace("/\[state\]/", $js_state_url, $js_inline_template);
   // ------------------------------------------------------------------- return value from function ----
 
-  return $json_state_obj . $json_results_obj . $topbar_gui_compiled . $table . $bottombar . $section_cap . '<div id="pagination_temp"></div>'; 
+  return $json_state_obj . $json_results_obj . $topbar_gui_compiled . $table . $grid_content . $bottombar . $section_cap;
 
   /* '<ul id="data-display"><li>' . $json_encoded_atts . '</li> */
   /*   <li>' . implode(', ', flatten_array($_SESSION['search_atts'])) . '</li></ul>'; */

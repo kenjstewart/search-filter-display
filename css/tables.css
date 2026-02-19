@@ -4,25 +4,82 @@
 /* google fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 
+.noimage {
+  --s: 121px; /* control the size*/
+  --c1: #b2b2b2;
+  --c2: #ffffff;
+  --c3: #d9d9d9;
+  --_g: var(--c3) 0 120deg,#0000 0;
+  background:
+    conic-gradient(from -60deg at 50% calc(100%/3),var(--_g)),
+    conic-gradient(from 120deg at 50% calc(200%/3),var(--_g)),
+    conic-gradient(from  60deg at calc(200%/3),var(--c3) 60deg,var(--c2) 0 120deg,#0000 0),
+    conic-gradient(from 180deg at calc(100%/3),var(--c1) 60deg,var(--_g)),
+    linear-gradient(90deg,var(--c1)   calc(100%/6),var(--c2) 0 50%,
+                          var(--c1) 0 calc(500%/6),var(--c2) 0);
+  background-size: calc(1.732*var(--s)) var(--s);
+}
+
+.noimage2 {
+  --mask:
+    radial-gradient(8.44em at 50% calc(100% + 7.2em),#0000 calc(99% - 0.4em),#000 calc(101% - 0.4em) 99%,#0000 101%) calc(50% - 8em) calc(50% - 2.2em + .5px)/16em 4.4em ,
+    radial-gradient(8.44em at 50% -7.2em,#0000 calc(99% - 0.4em),#000 calc(101% - 0.4em) 99%,#0000 101%) 50% calc(50% + 2.2em)/16em 4.4em ;
+  -webkit-mask: var(--mask);
+          mask: var(--mask);
+}
+
+.loader {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      position: relative;
+      filter: invert(30%);
+      animation: rotate 1s linear infinite;
+    }
+    .loader::before {
+      content: "";
+      box-sizing: border-box;
+      position: absolute;
+      inset: 0px;
+      border-radius: 50%;
+      border: 3px solid #FFF;
+      animation: prixClipFix 3s linear infinite ;
+    }
+
+    @keyframes rotate {
+      100%   {transform: rotate(360deg)}
+    }
+
+    @keyframes prixClipFix {
+        0%   {clip-path:polygon(50% 50%,0 0,0 0,0 0,0 0,0 0)}
+        25%  {clip-path:polygon(50% 50%,0 0,100% 0,100% 0,100% 0,100% 0)}
+        50%  {clip-path:polygon(50% 50%,0 0,100% 0,100% 100%,100% 100%,100% 100%)}
+        75%  {clip-path:polygon(50% 50%,0 0,100% 0,100% 100%,0 100%,0 100%)}
+        100% {clip-path:polygon(50% 50%,0 0,100% 0,100% 100%,0 100%,0 0)}
+    }
 .unstyle {
   all: revert; /* Or all: unset; */
 }
 
-.loading-spinner { 
-  position: sticky;
-  left: 10px; 
-  bottom: 10px;
-  height: 100px;
-  width: 100px; 
+.hidden {
+  display: hidden;
 }
 
-.table div .loading-spinner { 
-  position: sticky;
-  left: 10px; 
-  bottom: 10px;
-  height: 100px;
-  width: 100px; 
-}
+/* .loading-spinner {  */
+/*   position: sticky; */
+/*   left: 10px;  */
+/*   bottom: 10px; */
+/*   height: 100px; */
+/*   width: 100px;  */
+/* } */
+/**/
+/* .table div .loading-spinner {  */
+/*   position: sticky; */
+/*   left: 10px;  */
+/*   bottom: 10px; */
+/*   height: 100px; */
+/*   width: 100px;  */
+/* } */
 
 .align-center {
 	text-align: center !important;

@@ -1796,7 +1796,7 @@
 /* Subtle variant */
 
 .simpui-badge.subtle {
-    background: rgba(0, 0, 0, 0.05);
+    background: #d7d7d7ff;
     color: var(--simpui-text-dim);
 }
 
