@@ -1,19 +1,8 @@
 
-// Description:  Supporting js library for search and interactive display
-// Version:      0.1a
-// Last Change:  19 February 2026
-// Author:       Ken Stewart <kengfx@gmail.com>
-//
-// This code is a supporting library only implementing functions to   
-// call wordpress specific php and pod searches using ajax requests.         
-// This was created expressly for the ACM SIGGRAPH History Archive at BGSU, 
-// all software is provided as-is and is not licensed for commercial use 
-// by anyone outside of the ACM unless explicitly authorized by the author
-// or the presiding ACM Siggraph History Archive team.
 
 
 jQuery(document).ready(function($) {
-  console.log('ajax search triggered');
+  console.log('rest search triggered');
 
   // HINT: Function to call to change format of display, or reduce query amt.
   //       Increases in query will require and update too, but will be
@@ -117,7 +106,7 @@ jQuery(document).ready(function($) {
         quant_display = `<span class="simpui-badge subtle sm">${item.quantity}</span>`;
       }
 
-          // ${conflabel}
+      // ${conflabel}
       return_list.push(
         `<div class="short summary-card-wrapper" style="height: 265px; overflow: visible; position: relative;">
           <div class="summary-card" style="overflow: hidden;">
@@ -163,8 +152,8 @@ jQuery(document).ready(function($) {
 
 
 
-  // HINT: Function to change pages
 
+  // HINT: Function to change pages
   function changePageResults() {
     // * when new ajax search is warrented this is the function.
     
@@ -173,9 +162,9 @@ jQuery(document).ready(function($) {
       type: "post",
       dataType: "json",
       url: ajax_obj.ajaxurl,
+      timeout: 5000,
       data: {
         action: 'fetch_search_results',
-        nonce: ajax_obj.nonce,
         query: embedded_page_state_object,
       },
       beforeSend: function() {
@@ -212,47 +201,59 @@ jQuery(document).ready(function($) {
       },
     })
   }
-  
+ 
+
+
+
+
+
   function initialResults() {
     // initialize search results.
     jQuery.ajax({
       type: "post",
       dataType: "json",
       url: ajax_obj.ajaxurl,
+      timeout: 5000,
       data: {
         action: 'fetch_search_results',
-        nonce: ajax_obj.nonce,
         query: ajax_obj.query_state,
       },
       beforeSend: function() {
         $("#spinner").show();
       },
       success: function(data) {
-        // console.log(data);
+        console.log(data);
         // HINT: Updating the global results object for tracking
         $('#results_object').text(JSON.stringify(data.data.results));
         
         // HINT: Add in missing bits
-        const total_found = Number(data.data.context.total_found) ?? 0;
-        // console.log(total_found);
-        ajax_obj.query_state.total_found = total_found;
-        
-        const current_page = ajax_obj.query_state['page'];
-        const per_page = ajax_obj.query_state['perpage'];
-        let count = 0;
-        if (total_found > 0){
-          count = total_found/Number(per_page);
-          // console.log(count);
-        }
-        // count = Math.round(count);
-        ajax_obj.query_state.lastpage = count;
-        ajax_obj.query_state.firstpage = 1;
-        $('#state_object').text(JSON.stringify(ajax_obj.query_state));
 
-        const display_page_count = `${current_page} / ${count}`;
-        $('#page_counter').text(display_page_count);
+        let tf = Object.hasOwn(data.data.context, 'total_found');
+        if (tf) {
+          let td = data.data.context['total_found'];
+          console.log(`total_found exists? ${tf} ${td}`);
+        }
+        if (tf) { 
+          let count = 0;
+          const total_found = Number(data.data.context['total_found']) ?? 1;
+          ajax_obj.query_state.total_found = total_found;
+          
+          const current_page = ajax_obj.query_state['page'];
+          const per_page = ajax_obj.query_state['perpage'];
+          if (total_found > 0){
+            count = total_found/Number(per_page);
+          }
+          
+          count = ~~count;
+          ajax_obj.query_state.lastpage = count;
+          ajax_obj.query_state.firstpage = 1;
+          $('#state_object').text(JSON.stringify(ajax_obj.query_state));
+
+          const display_page_count = `${current_page} / ${count}`;
+          $('#page_counter').text(display_page_count);
         
-        // console.log(data.data);
+        }
+          
         if (ajax_obj.query_state.mode == 'list') {
           rebuildTable(data.data.results);
         }
@@ -260,7 +261,9 @@ jQuery(document).ready(function($) {
           rebuildGrid(data.data.results);
         }
       },
-    })
+    }).fail(function (response, textStatus, err) {
+      console.log(response, textStatus, err);
+    });;
   }
   
   initialResults();
@@ -333,6 +336,12 @@ jQuery(document).ready(function($) {
   });
 
   // NOTE: Dropdown binding
+
+  $("#current-filter").bind('dropDownEvent', function() {
+    let newValue = this.textContent;
+    console.log(this);
+    setStateItem('filter', newValue);
+  });
 
   $("#current-per-page").bind('dropDownEvent', function() {
     let newValue = this.textContent;

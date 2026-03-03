@@ -1,0 +1,38 @@
+<html lang="en">
+  <head>
+    <link rel='https://api.w.org/' href='http://localhost/wp-json/' />
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <link rel="stylesheet" href='css/simpui.css'>
+
+  <style>
+
+  body {
+    background-color: #3d6c6b;
+  }
+
+  </style>
+</head>
+
+<body>
+<h1 x-data="{ message: 'Inventory' }" x-text="message"></h1>
+  <div x-data="{ filter: 0 }" id="settings">
+    <select id="filter_select">
+      <option value="0">No Filter</option>
+      <option value="1">Collectibles</option>
+      <option value="2">Publications</option>
+    </select>
+  </div>
+
+  <div id="container" style="display: flex; flex-direction: column;">
+    <div id="pagination">
+    </div>
+  </div>
+
+<script type="text/javascript" src="test.js"></script>
+
+
+</body>
+</html>
+
+
