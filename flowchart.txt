@@ -1,0 +1,54 @@
+
+                  FLOWCHART OF OPERATIONS
+                 
+              
+                 
+                1.    +------------+      initial loading of the page
+                      |            |      on doc ready fire javascript
+                      |  PHP LOAD  |
+                      |            |
+                      +------------+
+                             |    
+                             |    
+                             ⌄    
+                2.    +------------+      call to fetch from REST Api
+                      |            |      with async javascript function
+        +----->------>| JS REQUEST |
+        |             |            |
+        |             +------------+
+        |                    |    
+        |                    |    
+        |                    ⌄    
+        |       3.    +------------+      pods called and returns the
+        |             |            |      data to the caller js script
+        ^             |  PHP PODS  |      for parsing
+        |             |  RESPONSE  |
+        |             |            |
+        |             +------------+
+        |                    |    
+        |                    |    
+        |                    ⌄    
+        |       4.    +------------+      display as table on page
+        |             |            |
+        ^             |  JS TABLE  |
+        |             |  RE/BUILD  |
+        |             |            |
+        |             +------------+
+        |                    |    
+        |                    |    
+        |                    ⌄    
+        |       5.    +------------+      wait for user to advance the
+        |             |            |      page or change the search params
+        |             | WAIT FOR A |      (filter, per_page, format etc.)
+        ^             | USER INPUT |
+        |             |            |
+        |             +------------+
+        |                    |    
+        |                    |    
+        |                    ⌄   
+        |       6.    +------------+      on change call fetch REST Api
+        |             |            |      again, assert return updated results
+        +-----<-------|  ON USER   |
+                      |   INPUT    |
+                      |            |
+                      +------------+

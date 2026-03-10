@@ -20,11 +20,8 @@ import {rebuildTable, rebuildGrid} from './displaylib.js';
 
 // NOTE: globally scoped vars and objects
 
+var sfd_inventory = "sfd/v1/archive_inventory"
 var inventory_all = "wp/v2/archive_inventory/";
-var inventory_types = "wp/v2/types/archive_inventory/";
-var featured_media = "wp/v2/media/125744/";
-
-
 var jQuery = window.jQuery;
 var $ = jQuery;
 
@@ -39,15 +36,12 @@ function sanitize(data) {
 
 
 
-
-
 // NOTE: Only trigger once the entire page has loaded its content
 jQuery(document).ready(function($) {
 
-
   async function getFromEndpoint(url, filter = null) {
-
-    console.log(getFunc(new Error().stack)); 
+    console.log(getFunc(new Error().stack));
+    console.log(url, filter);
     try {
       if (filter != null) {
          url = url + filter;
@@ -56,50 +50,52 @@ jQuery(document).ready(function($) {
       if (!resp.ok) {
         throw new Error(`Error: ${url}`);
       }
-      const total = resp.headers.get("X-WP-Total");
-      const pages = resp.headers.get("X-WP-Totalpages");
+      // const total = resp.headers.get("X-WP-Total");
+      // const pages = resp.headers.get("X-WP-Totalpages");
       const results = await resp.json();
-      console.log(results); 
       let entries = [];
-      $.each(results, (idx, item) => {
-        // console.log(item); 
-        // decide which sub-type to return
-        let category = item.inventory_item_main_type[0].name;
-        let item_type;
-        if (category == "Publications") {
-          item_type = item.inventory_publication_type;
-        } else if (category == "Collectibles") {
-          item_type = item.inventory_collectible_type[0].name;
-        }
-        if (Array.isArray(item_type)) {
-          item_type = item_type.join(', ');
-        }
-        // hone the results down into a tight package 
-        let entry = {
+      // console.log(results);
+      $.each(results.entries, function(idx, item) {
+        const entry = {
           id: item.id,
-          title: item.inventory_title,
-          image: item['inventory_image-one'].guid,
-          category: category,
-          year: item.inventory_year[0],
-          url: item.link,
-          item_type: item_type,
-          item_type_id_fallback: item.inventory_main_type[0],
-          item_type_id: item.inventory_item_main_type[0].term_id,
-          volume: item.inventory_volume,
-          number: item.inventory_number,
-          amount: item.inventory_total_number_of_item
+          title: item.title,
+          image: item.image,
+          category: item.cat_type,
+          year: item.year,
+          url: item.url,
+          item_type: item.sub_type,
+          item_type_id_fallback: item.cat_id,
+          item_type_id: item.cat_id,
+          volume: item.volume,
+          number: item.number,
+          amount: item.quantity
         };
+        // console.log(idx, entry)
         entries.push(entry);
       });
-      
-      results_obj = {total, pages, entries};
+      // returns
+      const total = results.total_found;
+      const pages = results.pages;
+      results_obj = {entries, pages, total};
       
     } catch (err) {
       console.error('fetch error:', err);
     }
   }
 
-
+  // console.log(item); 
+  // decide which sub-type to return
+  // let category = item.cat_type;
+  // let item_type;
+  // if (category == "Publications") {
+  //   item_type = item.inventory_publication_type;
+  // } else if (category == "Collectibles") {
+  //   item_type = item.inventory_collectible_type[0].name;
+  // }
+  // if (Array.isArray(item_type)) {
+  //   item_type = item_type.join(', ');
+  // }
+  // hone the results down into a tight package 
 
 
   
@@ -120,11 +116,11 @@ jQuery(document).ready(function($) {
 
   const QueryDetails = {
     pagenum: 1,
-    per_page: 10,
+    per_page: 15,
     show_filter: "false",
     show_search: "false",
     mode: "list",
-    orderby: "orderby=inventory_year",
+    orderby: "&q[orderby]=inventory_year",
     order: "DESC",
     pod: "",
     filt: "",
@@ -165,21 +161,21 @@ jQuery(document).ready(function($) {
       console.log(`per_page: ${oldper} changed to per_page: ${per}`);
     },
     queryCompile: function () {
-      const c = `&filter[orderby]=`;
-      let comp = `${this.endpoint}?${this.filt}&_embed&_fields=${this.fields.join(',')}&per_page=${this.per_page}&page=${this.pagenum}&${this.orderby}`;
-      console.log({comp});
+      let comp = `${this.endpoint}?${this.filt}q[limit]=${this.per_page}&q[page]=${this.pagenum}${this.orderby}`;
+      console.log(comp);
       return comp;
     },
     addFilter: function (key, val) {
       if (this.filt === "") { 
-        this.filt += `&filter[meta_key]=${key}&filter[meta_value]=${val}`;
+        // http://localhost/wp-json/sfd/v1/archive_inventory?q[filter]=&q[orderby]=inventory_year&q[limit]=10
+        this.filt += `q[filter]=${key},${val}&`;
       } else {
-        this.filt += `&filter[meta_key]=${key}&filter[meta_value]=${val}`;
+        this.filt += `q[filter]=${key},${val}&`;
       }
       console.log(`filter is now: ${this.filt}`);
     },
     setOrderBy: function (orderby) {
-      this.orderby = orderby;
+      this.orderby = `&q[orderby]=${orderby}`;
     },
     clearFilter: function () {
       this.filt = "";
@@ -194,52 +190,62 @@ jQuery(document).ready(function($) {
   let state_obj = $("#state_object");
   state_obj = JSON.parse(state_obj.text());
   console.log(state_obj); 
-
+  
   // adjust query-details to match sfd
   QueryDetails.pagenum = state_obj.page;
   QueryDetails.per_page = state_obj.perpage;
   QueryDetails.show_filter = state_obj.filter;
-  QueryDetails.show_search = state_obj.search;
+  // QueryDetails.show_search = state_obj.search;
   QueryDetails.mode = state_obj.mode;
-  // QueryDetails.orderby = state_obj.orderby;
+  QueryDetails.setOrderBy('inventory_year');
   QueryDetails.pod = state_obj.pod;
-  QueryDetails.setEndpoint(inventory_all);
+  QueryDetails.setEndpoint(sfd_inventory);
 
   // global result object
-  let results_obj;
+  var results_obj;
 
   // call the main REST endpoint request 
-  getFromEndpoint(QueryDetails.queryCompile());
+  getFromEndpoint(QueryDetails.queryCompile());     // WARN:
 
   // update the interface
   const container = $('#container');
   var initial_interval = setInterval(function() {
     if (results_obj) {
       clearInterval(initial_interval);
+      // console.log(results_obj);
       $('#results_object').text(JSON.stringify(results_obj));
       // update on delivery
     } }, 500);
+  
   updateResults();
+
+
+
+
+
 
 
   // NOTE: Dropdown binding
 
-  // $("#current-filter").bind('dropDownEvent', function() {
-  //   let newValue = this.textContent;
-  //   console.log(this);
-  //   setStateItem('filter', newValue);
-  // });
-  //
-  //
-  //
-  // $("#current-per-page").bind('dropDownEvent', function() {
-  //   let newValue = this.textContent;
-  //   console.log(this);
-  //   setStateItem('perpage', newValue);
-  // });
-  //
+  $("#current-filter").bind('dropDownEvent', function() {
+    let newValue = this.textContent;
+    console.log(this);
+    setStateItem('filter', newValue);
+  });
+
+  $("#current-per-page").bind('dropDownEvent', function() {
+    let newValue = this.textContent;
+    console.log(this);
+    setStateItem('perpage', newValue);
+  });
+
+
+
+
+
 
   const st_obj = $('#state_object');
+
   st_obj.bind('change', function() {
     console.log('STATE_OBJECT changed');
     if (! results_obj) {
@@ -248,14 +254,12 @@ jQuery(document).ready(function($) {
     updateQuery(st_obj);
   });
 
-
   let filter_option = $("#current-filter");
   filter_option.bind('dropDownEvent', function() { 
     console.log(`filter option changed: ${this.textContent}`);
 
     updateQuery();
   });
-
 
   // let rpp_amt_hidden = $("rpp_amt");
   // rpp_amt_hidden.bind('input', function() { 
@@ -292,11 +296,11 @@ jQuery(document).ready(function($) {
     QueryDetails.clearFilter();
     let selected_filter = $("#current-filter").text();
     if (selected_filter === "Publications") {
-      QueryDetails.addFilter("inventory_item_main_type", "17270");
+      QueryDetails.addFilter("inventory_item_main_type.term_id", "17270");
     } else if (selected_filter === "Collectibles") {
-      QueryDetails.addFilter("inventory_item_main_type", "17269");
+      QueryDetails.addFilter("inventory_item_main_type.term_id", "17269");
     } else if (selected_filter === "Other") {
-      QueryDetails.addFilter("inventory_item_main_type", "17271");
+      QueryDetails.addFilter("inventory_item_main_type.term_id", "17271");
     }
     
     /* kick off the search */
@@ -310,50 +314,51 @@ jQuery(document).ready(function($) {
 
 
   function updateResults() {
+
     // NOTE: workaround for async update
-    
-    console.log(getFunc(new Error().stack)); 
+      var interval = setInterval(function() {
+        try {
+          if (results_obj) {
+            console.log(results_obj);
 
-    var interval = setInterval(function() {
-      if (results_obj) {
-        console.log(results_obj);
+            console.log(getFunc(new Error().stack));
+            // HINT: put in new results object
+            clearInterval(interval);
+            $('#results_object').text(JSON.stringify(results_obj));
+            // every time the table is updated with results it updates the results object,
+            // aswell as updating the state object with the page range and total entries found.
+            setStateItem('firstpage', "1", false);
+            setStateItem('lastpage', results_obj.pages, false);
+            setStateItem('total_found', results_obj.total, false);
+            container.innerHTML = '';
 
-        // HINT: put in new results object
-        clearInterval(interval);
-        $('#results_object').text(JSON.stringify(results_obj));
-        
-        // every time the table is updated with results it updates the results object,
-        // aswell as updating the state object with the page range and total entries found.
-        setStateItem('firstpage', "1", false);
-        setStateItem('lastpage', results_obj.pages, false);
-        setStateItem('total_found', results_obj.total, false);
-
-        container.innerHTML = '';
-
-        // HINT: Get missing bits for pagination
-        const total_found = getStateItem('total_found') ?? 0;
-        const current_page = getStateItem('page');
-        const per_page = getStateItem('perpage');
-        let count = 0;
-        if (total_found > 0){
-          count = total_found/Number(per_page);
+            // HINT: Get missing bits for pagination
+            const total_found = getStateItem('total_found') ?? 0;
+            const current_page = getStateItem('page');
+            const per_page = getStateItem('perpage');
+            let count = 0;
+            if (total_found > 0){
+              count = total_found/Number(per_page);
+            }
+            // update pagination
+            count = ~~count;
+            const display_page_count = `${current_page} / ${count}`;
+            $('#page_counter').text(display_page_count);
+            if (getStateItem('mode') == 'list') {
+              logger('should rebuild table now');
+              rebuildTable(results_obj.entries);
+            }
+            if (getStateItem('mode') == 'grid') {
+              rebuildGrid(results_obj.entries);
+            }
+            // });
+          }  
+        } catch (err) {
+          console.error('fetch error:', err);
         }
-        // update pagination
-        count = ~~count;
-        const display_page_count = `${current_page} / ${count}`;
-        $('#page_counter').text(display_page_count);
-        if (getStateItem('mode') == 'list') {
-          logger('should rebuild table now');
-          rebuildTable(results_obj.entries);
-        }
-        if (getStateItem('mode') == 'grid') {
-          rebuildGrid(results_obj.entries);
-        }
-        // });
-      }  
-    }, 
-    500);
-    results_obj = null;
+      }, 
+      500);
+      results_obj = null;
   }
 
 
@@ -393,8 +398,8 @@ jQuery(document).ready(function($) {
   });
 
 
-
   $('#goto_lastpage_button').bind('click', function() {
+
     let st = getState();
     if (st.lastpage != st.page) {
       setStateItem('page', getState().lastpage);

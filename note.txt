@@ -1,0 +1,4 @@
+
+[sfd pod="archive_inventory" mode="list" perpage="15" page="1" search=false filter=true pagination=true orderby="inventory_year"]
+
+

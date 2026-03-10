@@ -14,7 +14,7 @@ add_filter('rest_api_init', function() {
 });
 
 //  NOTE: key pods search function
-function spd_pods($data) {
+function sfd_pods($data) {
 
   $pod_name = $data['pod'];
   $limit = $data['limit'] ?? 10;
@@ -22,54 +22,65 @@ function spd_pods($data) {
   $pagin = true;
   $current_page = $data['page'];
   $orderby = $data['orderby'] . " " . $data['order'];
-  
-  $params = array('limit' => $limit, 'pagination' => $pagin, 'page' => $current_page, 'orderby' => $orderby);
-  
+  if (isset($data['filter'])) {
+    $flt_arr = explode(",", $data['filter']);
+    $filter_where = "$flt_arr[0]=$flt_arr[1]";
+    $params = array('limit' => $limit, 'pagination' => $pagin, 'page' => $current_page, 'orderby' => $orderby, 'where' => $filter_where);
+  } else {
+    $params = array('limit' => $limit, 'pagination' => $pagin, 'page' => $current_page, 'orderby' => $orderby);
+  }
   $pod_obj = pods($pod_name);
   $pod_obj->find($params);
   $total_records = $pod_obj->total_found();
   $proc = [];
-  
+
+  if ($total_records != 0) {
+    $total_pages = $total_records/$limit;
+    $total_pages = (int) $total_pages;
+  } else {
+    $total_pages = 'unknown';
+  }
+
   while ($pod_obj->fetch()){
     $item_category = $pod_obj->field('inventory_item_main_type.name');
-    
     if ($item_category == "Collectibles") {
         $item_type = $pod_obj->display('inventory_collectible_type.name');
-        $subtitle = $pod_obj->display('inventory_collectible_subtype.name');
+        $subtype = $pod_obj->display('inventory_collectible_subtype.name');
     } elseif ($item_category == "Publications") {
         $item_type = $pod_obj->display('inventory_publication_type.name');
-        $subtitle = $pod_obj->display('inventory_publication_subtype.name');
+        $subtype = $pod_obj->display('inventory_publication_subtype.name');
     } else {
       $item_type = "";
-      $subtitle = "";
+      $subtype = "";
     }
     $id = $pod_obj->field('id');
     $donated_by = $pod_obj->field('inventory_donated_by');
     $link = $pod_obj->field('permalink');
     $item = [
       "id" => $id,
-      /* "all" => $pod_obj->fields(), */
+      "all" => $pod_obj->field('inventory_item_main_type'),
       "url" => esc_url($link), 
-      /* "size" => $pod_obj->display('inventory_item_size'), */
-      /* "color" => $pod_obj->display('inventory_color'), */
-      "donated_by" => $donated_by,
+      /* "donated_by" => $donated_by, */
       "year" => $pod_obj->display('inventory_year'),
-      /* "alt_name" => $pod_obj->fields('inventory_year'), */
       "title" => $pod_obj->field('inventory_title'),
-      "subtitle" => $subtitle,
-      "category" => $item_category,
+      "sub_type" => $subtype,
+      "cat_type" => $pod_obj->field('inventory_item_main_type.name'),
+      "cat_id" => $pod_obj->field('inventory_item_main_type.term_id'),
       "volume" => $pod_obj->display('inventory_volume_raw'),
       "number" => $pod_obj->display('inventory_number_raw'),
       "type" => $item_type,
       "quantity" => $pod_obj->field('inventory_total_number_of_item'),
-      "image_one" => $pod_obj->display('inventory_image-one.guid'),
+      "image" => $pod_obj->display('inventory_image-one.guid'),
 ];
     array_push($proc, $item);
   }
   $results = [
     "entries" => $proc,
-    "total_found" => $total_records
+    "total_found" => $total_records,
+    "filtered_by" => $filter_where,
+    "pages" => $total_pages
   ];
+
   return $results;
 }
 
@@ -102,7 +113,10 @@ function sfd_archive_inventory_callback( WP_REST_Request $request) {
     'limit' => $limit,
     'page' => $page ?? '1'
   );
-  $response = spd_pods($pod_params);
+  $sfd = sfd_pods($pod_params);
+  $response = new WP_REST_Response($sfd, 200);
+  $response->header('X-WP-Total', $sfd['total_found']);
+  $response->header('X-WP-Totalpages', $sfd['pages']);
   return $response;
 }
 
@@ -129,7 +143,7 @@ function prefix_get_endpoint_phrase() {
 /*     return $args; */
 /*   } */
 /* /*   // http://localhost/wp-json/wp/v2/archive_inventory/?year=1990   works */
-/*   $item_type_value = sanitize_text_field( $request['year'] ); */
+/*   $item_type_value = sanitize_)text_field( $request['year'] ); */
 /*   $item_type_meta_query = array('key' => 'inventory_year', 'value' => $item_type_value); */
 /*   if ( isset( $args['meta_query'] ) ) { */
 /*     $args['meta_query']['relation'] = 'AND'; */
@@ -227,7 +241,7 @@ add_filter('rest_archive_inventory_query', function($args, $request) {
 
 
 
-add_action('rest_api_init', 'rest_api_custom_filters');
+/* add_action('rest_api_init', 'rest_api_custom_filters'); */
 function rest_api_custom_filters() {
   add_filter('rest_archive_inventory_query', 'rest_archive_inventory_filter_param', 10, 2);
 }

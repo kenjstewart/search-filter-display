@@ -1,23 +1,23 @@
 <?php
 
-function spd_plugin_url() {
-  $spd_plugin_url = WP_PLUGIN_URL . "/search-filter-display";
+function sfd_plugin_url() {
+  $sfd_plugin_url = WP_PLUGIN_URL . "/search-filter-display";
   /* if ( is_dir( $spd_plugin_url ) ) { */
   /*   return $spd_plugin_url; */
   /* } */
-  return $spd_plugin_url;
+  return $sfd_plugin_url;
 }
 
-function spd_plugin_dir() {
-  $spd_plugin = WP_PLUGIN_DIR . "/search-filter-display";
-  if ( is_dir( $spd_plugin ) ) {
-    return $spd_plugin;
+function sfd_plugin_dir() {
+  $sfd_plugin = WP_PLUGIN_DIR . "/search-filter-display";
+  if ( is_dir( $sfd_plugin ) ) {
+    return $sfd_plugin;
   }
 }
-$_URL = spd_plugin_url();
+$_URL = sfd_plugin_url();
 define( 'THIS_PLUGIN_URL', $_URL );
 
-$ROOT_PATH = spd_plugin_dir();
+$ROOT_PATH = sfd_plugin_dir();
 define( 'THIS_PLUGIN_PATH', $ROOT_PATH );
 
 

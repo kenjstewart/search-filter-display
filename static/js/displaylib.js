@@ -6,6 +6,7 @@ var $ = jQuery;
 
 export function rebuildTable(data) {
     console.log('rebuild table called');
+    console.log(data);
     $('#grid_content').hide()
     $('#grid_content').html("")
     $('#table-header').show();
@@ -55,44 +56,44 @@ export function rebuildTable(data) {
           <td style="text-align: center;">${category}</td>
           <td style="text-align: center;"></td>
           <td>${sub_type}</td>
-          <td style="text-align: center;">${quant_display}</td>
-        </tr>`);
-    });
-    $('#custom_search_results').html(return_list);
-    $("#spinner").hide();
-  }
+            <td style="text-align: center;">${quant_display}</td>
+          </tr>`);
+      });
+      $('#custom_search_results').html(return_list);
+      $("#spinner").hide();
+    }
 
 
 
 
-  // NOTE: Grid
-  export function rebuildGrid(data) {
-    console.log('rebuild grid called');
+    // NOTE: Grid
+    export function rebuildGrid(data) {
+      console.log('rebuild grid called');
 
-    $('#table-header').hide();
-    $('#custom_search_results').hide();
-    $('#custom_search_results').html("");
-    // ------------------------
-    $('#main_table').hide();
-    $('#grid_content').show()
+      $('#table-header').hide();
+      $('#custom_search_results').hide();
+      $('#custom_search_results').html("");
+      // ------------------------
+      $('#main_table').hide();
+      $('#grid_content').show()
 
-    const res_obj = getResults();
-    let return_list = [];
+      const res_obj = getResults();
+      let return_list = [];
 
-    $.each(data, function(idx, item) {
-      let category = item.category;
-      let th_volnum = "";
-      if (category == "Publications") {
-        if (item.volume.length>0) {
-          if (item.number.length>0){
-            th_volnum = `(Vol. ${item.volume}, No. ${item.number})`;
+      $.each(data, function(idx, item) {
+        let category = item.category;
+        let th_volnum = "";
+        if (category == "Publications") {
+          if (item.volume.length>0) {
+            if (item.number.length>0){
+              th_volnum = `(Vol. ${item.volume}, No. ${item.number})`;
+            }
           }
         }
-      }
-      let title = item.title; 
-      const siggraph = new RegExp("^SIGGRAPH\\s\\d{4}\\s", "g");
-      const res = siggraph.exec(title);
-      let conflabel = "";
+        let title = item.title; 
+        const siggraph = new RegExp("^SIGGRAPH\\s\\d{4}\\s", "g");
+        const res = siggraph.exec(title);
+        let conflabel = "";
       let cut_title = new String();
       if (res) {
         let cut_title = title.slice(res['0'].length, title.length);

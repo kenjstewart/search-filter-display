@@ -125,13 +125,13 @@ function search_filter_gui ($atts) {
   $grid_content = "<div id='grid_content' style='margin: 10px 0px'></div>";
 
   // ----------------------------------------------------------------- inject the js and return gui ----
-  $js_inline_template = '<script lang="javascript" src="[state]" type="module"></script>';
-  $js_state_url = THIS_PLUGIN_URL . '/static/js/rest-handler.js';
-  $js_state_inject = preg_replace("/\[state\]/", $js_state_url, $js_inline_template);
+  $js_REST_template = '<script lang="javascript" src="[state]" type="module"></script>';
+  $js_REST_url = THIS_PLUGIN_URL . '/static/js/rest-handler.js';
+  $js_REST_inject = preg_replace("/\[state\]/", $js_REST_url, $js_REST_template);
 
 
   // ------------------------------------------------------------------- return value from function ----
-  return $json_state_obj . $json_results_obj . $topbar_gui_compiled . $table . $grid_content . $bottombar . $section_cap . $js_state_inject;
+  return $json_state_obj . $json_results_obj . $topbar_gui_compiled . $table . $grid_content . $bottombar . $section_cap . $js_REST_inject;
 }
 
 
