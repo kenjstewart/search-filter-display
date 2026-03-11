@@ -28,7 +28,7 @@ export function rebuildTable(data) {
       // console.log(index); 
       let category = item.category;
       let volnum = "";
-      if (category == "Publications") {
+      if (category == "Publication") {
         if (item.volume.length>0) {
           if (item.number.length>0){
             volnum = `(Vol. ${item.volume}, No. ${item.number})`;

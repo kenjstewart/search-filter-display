@@ -60,7 +60,7 @@ function search_filter_gui ($atts) {
   if ($atts['filter'] == "true") {
     $filter_button = make_button("/static/svg/filter-funnel.svg", "filter");
     $filter_dropdown = file_get_contents("$filter_url");
-    $filter_dropdown = preg_replace("/\[default\]/", "No filter",$filter_dropdown);
+    $filter_dropdown = preg_replace("/\[default\]/", "View All",$filter_dropdown);
 
   } else {
     $filter_button = "";

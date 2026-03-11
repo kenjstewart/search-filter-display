@@ -37,8 +37,8 @@ function sanitize(data) {
 
 
 // NOTE: Only trigger once the entire page has loaded its content
-jQuery(document).ready(function($) {
 
+jQuery(document).ready(function($) {
   async function getFromEndpoint(url, filter = null) {
     console.log(getFunc(new Error().stack));
     console.log(url, filter);
@@ -216,7 +216,6 @@ jQuery(document).ready(function($) {
       $('#results_object').text(JSON.stringify(results_obj));
       // update on delivery
     } }, 500);
-  
   updateResults();
 
 

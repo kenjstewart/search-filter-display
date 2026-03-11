@@ -13,12 +13,26 @@ add_filter('rest_api_init', function() {
 
 });
 
+
+function getAllData($data) {
+  $pod_name = $data['pod'];
+  $id = $data['id'];
+  $pod_obj = pods($pod_name);
+  $condition = `id=${id}`;
+  $params = array('limit' => 1, 'pagination' => true, 'page' => 1, 'where' => $condition);
+  $pod_obj->find($params);
+  $result = [];
+  while ($pod_obj->fetch()) {  
+    array_push($result, $pod_obj->export());
+  }
+  return $result;
+}
+
+
 //  NOTE: key pods search function
 function sfd_pods($data) {
-
   $pod_name = $data['pod'];
   $limit = $data['limit'] ?? 10;
-  /* $search = $data['search'] ?? 0; */
   $pagin = true;
   $current_page = $data['page'];
   $orderby = $data['orderby'] . " " . $data['order'];
@@ -42,11 +56,12 @@ function sfd_pods($data) {
   }
 
   while ($pod_obj->fetch()){
+
     $item_category = $pod_obj->field('inventory_item_main_type.name');
-    if ($item_category == "Collectibles") {
+    if ($item_category == "Collectible") {
         $item_type = $pod_obj->display('inventory_collectible_type.name');
         $subtype = $pod_obj->display('inventory_collectible_subtype.name');
-    } elseif ($item_category == "Publications") {
+    } elseif ($item_category == "Publication") {
         $item_type = $pod_obj->display('inventory_publication_type.name');
         $subtype = $pod_obj->display('inventory_publication_subtype.name');
     } else {
@@ -58,9 +73,7 @@ function sfd_pods($data) {
     $link = $pod_obj->field('permalink');
     $item = [
       "id" => $id,
-      "all" => $pod_obj->field('inventory_item_main_type'),
       "url" => esc_url($link), 
-      /* "donated_by" => $donated_by, */
       "year" => $pod_obj->display('inventory_year'),
       "title" => $pod_obj->field('inventory_title'),
       "sub_type" => $subtype,
@@ -70,8 +83,8 @@ function sfd_pods($data) {
       "number" => $pod_obj->display('inventory_number_raw'),
       "type" => $item_type,
       "quantity" => $pod_obj->field('inventory_total_number_of_item'),
-      "image" => $pod_obj->display('inventory_image-one.guid'),
-];
+      "image" => $pod_obj->display('inventory_featured_image.guid'),
+    ];
     array_push($proc, $item);
   }
   $results = [
@@ -84,11 +97,13 @@ function sfd_pods($data) {
   return $results;
 }
 
+
 function sfd_archive_inventory_callback( WP_REST_Request $request) {
   /* $param_list = $request->get_params(); */
   $param_list = $request->get_query_params();
-   
   $q = $param_list['q'];
+  $d = $param_list['d'];
+
   if (isset($q['filter'])) {
     $filter = $q['filter'];
   }
@@ -104,16 +119,28 @@ function sfd_archive_inventory_callback( WP_REST_Request $request) {
   if (isset($q['order'])) {
     $order = $q['order'];
   }
-  $pod_name = 'archive_inventory';
-  $pod_params = array(
-    'pod' => $pod_name,
-    'filter' => $filter,
-    'orderby' => $orderby,
-    'order' => $order ?? 'DESC',
-    'limit' => $limit,
-    'page' => $page ?? '1'
-  );
-  $sfd = sfd_pods($pod_params);
+  if (isset($d['dev'])) {
+    $dev = $d['dev'];
+  }
+  if ($dev == true) {
+    $pod_name = 'archive_inventory';
+    if (isset($d['id'])) {
+      $pod_params = array('id' => $d['id'], 'pod' => $pod_name);
+    } else {
+      $pod_params = array('pod' => $pod_name);
+    }
+    $sfd = getAllData($pod_params);
+  } else {
+    $pod_name = 'archive_inventory';
+    $pod_params = array(
+      'pod' => $pod_name,
+      'filter' => $filter,
+      'orderby' => $orderby,
+      'order' => $order ?? 'DESC',
+      'limit' => $limit,
+      'page' => $page ?? '1');
+    $sfd = sfd_pods($pod_params);
+  }
   $response = new WP_REST_Response($sfd, 200);
   $response->header('X-WP-Total', $sfd['total_found']);
   $response->header('X-WP-Totalpages', $sfd['pages']);

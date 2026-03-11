@@ -1,0 +1,59 @@
+# SFD Configuration file
+# Format: TOML
+# Format Doc: [https://toml.io/en/]
+
+
+title = "Inventory Filter Configuration"
+date_changed = 1979-05-27T07:32:00
+
+[alias] # method for reducing related long traversal item names eg. primary_item_order.next_item.naming_convention.name_id  
+map = {
+  inventory_item_main_type.term_id = "item_type",
+  inventory_item_main_type.name = "category",
+  inventory_year = "year",
+  inventory_title = "title",
+  inventory_volume_raw = "volume",
+  inventory_number_raw = "number",
+  inventory_total_number_of_item = "quantity",
+  inventory_total_number_of_item = "quantity",
+  inventory_image-one.guid = "image_url"
+}
+
+[data]
+source = "rest_endpoint"
+rest_endpoint = "/wp-json/sfd/v1/archive_inventory"
+query_syntax = {
+  query = "?",
+  arg = "q",
+  append = "&"
+}
+
+[filter] # how the plugin displays initially and user choice of filter controls
+enabled = true
+hidden = false
+controls = {
+  filter_button = true,
+  filter_button_function = "modal"
+  dropdown = false,
+  search = true,
+  result_limit = true,
+  order_by = true
+}
+presets = {
+  view_all = ["View All"],
+  view_all = ["Publications"],
+  view_all = ["Collectibles"],
+  view_all = ["Other"]
+}
+
+
+[order]
+enabled = true
+hidden = false
+default_ordering = "year"
+allow_change = true
+
+[search]
+enabled = true
+hidden = false
+pods_search_field = "" # the pods field to filter by
